@@ -1,4 +1,4 @@
-package main
+package day01
 
 import (
 	"bufio"
@@ -10,12 +10,10 @@ import (
 	"strings"
 )
 
-func main() {
-
-}
-
-func part1(r io.Reader) (int, error) {
-	lists, err := parseLists(r)
+// CalcDifferenceScore sorts each vertical list of ints and calculates the difference
+// between the values on each line
+func CalcDifferenceScore(r io.Reader) (int, error) {
+	lists, err := ParseLists(r)
 	if err != nil {
 		return 0, fmt.Errorf("parse lists: %w", err)
 	}
@@ -34,7 +32,26 @@ func part1(r io.Reader) (int, error) {
 	return int(sum), nil
 }
 
-func parseLists(r io.Reader) ([][]int, error) {
+func CalcSimilarityScore(r io.Reader) (int, error) {
+	lists, err := ParseLists(r)
+	if err != nil {
+		return 0, fmt.Errorf("parse lists: %w", err)
+	}
+	similarityScore := 0
+
+	for _, item := range lists[0] {
+		appearances := 0
+		for _, v := range lists[1] {
+			if item == v {
+				appearances += 1
+			}
+		}
+		similarityScore += item * appearances
+	}
+	return similarityScore, nil
+}
+
+func ParseLists(r io.Reader) ([][]int, error) {
 	delim := "   "
 
 	scr := bufio.NewScanner(r)

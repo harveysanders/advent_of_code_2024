@@ -1,6 +1,6 @@
 module github.com/harveysanders/advent_of_code_2024
 
-go 1.22.3
+go 1.23.3
 
 require github.com/stretchr/testify v1.10.0
 
