@@ -52,8 +52,6 @@ func CalcSimilarityScore(r io.Reader) (int, error) {
 }
 
 func ParseLists(r io.Reader) ([][]int, error) {
-	delim := "   "
-
 	scr := bufio.NewScanner(r)
 	lists := make([][]int, 2)
 	for i := range lists {
@@ -62,7 +60,7 @@ func ParseLists(r io.Reader) ([][]int, error) {
 
 	for scr.Scan() {
 		line := scr.Text()
-		nums := strings.Split(line, delim)
+		nums := strings.Fields(line)
 		for i, rawN := range nums {
 			n, err := strconv.Atoi(rawN)
 			if err != nil {
