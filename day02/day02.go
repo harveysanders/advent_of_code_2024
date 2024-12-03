@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -33,14 +34,14 @@ func ParseReports(r io.Reader) ([][]int, error) {
 	return reports, nil
 }
 
-func CalcSafeReports(r io.Reader) (int, error) {
+func CalcSafeReports(r io.Reader, useDampener bool) (int, error) {
 	reports, err := ParseReports(r)
 	if err != nil {
 		return 0, fmt.Errorf("parse reports: %w", err)
 	}
 	var safeCount int
 	for _, report := range reports {
-		if IsSafeReport(report) {
+		if IsSafeReport(report, useDampener, false) {
 			safeCount += 1
 		}
 	}
@@ -55,19 +56,27 @@ const (
 	dirDesc
 )
 
-func IsSafeReport(report []int) bool {
+func IsSafeReport(report []int, useDampener bool, dampenerUsed bool) bool {
 	if len(report) < 2 {
 		return false
 	}
 
 	var dir direction
 	lastVal := report[0]
-	for _, v := range report[1:] {
+	for i, v := range report[1:] {
 		diff := lastVal - v
 		lastVal = v
 		if diff == 0 || math.Abs(float64(diff)) > 3 {
-			return false
+			if !useDampener {
+				return false
+			}
+			if dampenerUsed {
+				return false
+			}
+			// dampener enabled and not yet used
+			return IsSafeReport(slices.Delete(report, i, i+1), true, true)
 		}
+
 		newDir := dirAsc
 		// If diff is positive, the direction is descending
 		if diff > 0 {
@@ -82,7 +91,10 @@ func IsSafeReport(report []int) bool {
 			// Ensure the new direction is the
 			// same as before. If not, bail.
 			if dir != newDir {
-				return false
+				if !useDampener || dampenerUsed {
+					return false
+				}
+				return IsSafeReport(slices.Delete(report, i, i+1), true, true)
 			}
 		}
 	}

@@ -12,9 +12,10 @@ import (
 
 func TestDay02(t *testing.T) {
 	testCases := []struct {
-		desc     string
-		getInput func(t *testing.T) io.ReadCloser
-		want     int
+		desc        string
+		getInput    func(t *testing.T) io.ReadCloser
+		useDampener bool
+		test        func(t *testing.T, got int)
 	}{
 		{
 			desc: "part1 - example input",
@@ -26,7 +27,9 @@ func TestDay02(t *testing.T) {
 8 6 4 4 1
 1 3 6 7 9`))
 			},
-			want: 2,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 2, got)
+			},
 		},
 		{
 			desc: "part1 - actual input",
@@ -35,7 +38,36 @@ func TestDay02(t *testing.T) {
 				require.NoError(t, err)
 				return f
 			},
-			want: 224,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 224, got)
+			},
+		},
+		{
+			desc: "part2 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(`7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9`))
+			},
+			useDampener: true,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 4, got)
+			},
+		},
+		{
+			desc: "part2 - actual input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				f, err := os.Open("./input.txt")
+				require.NoError(t, err)
+				return f
+			},
+			useDampener: true,
+			test: func(t *testing.T, got int) {
+				require.Greater(t, got, 271)
+			},
 		},
 	}
 
@@ -43,9 +75,9 @@ func TestDay02(t *testing.T) {
 		input := tc.getInput(t)
 		defer input.Close()
 
-		got, err := day02.CalcSafeReports(input)
+		got, err := day02.CalcSafeReports(input, tc.useDampener)
 		require.NoError(t, err)
-		require.Equal(t, tc.want, got)
+		tc.test(t, got)
 	}
 }
 
@@ -127,7 +159,7 @@ func TestIsSafeReport(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			got := day02.IsSafeReport(tc.report)
+			got := day02.IsSafeReport(tc.report, tc.dampenerEnabled, false)
 			require.Equal(t, tc.want, got)
 		})
 	}
