@@ -43,3 +43,37 @@ func TestRunInstructions(t *testing.T) {
 		require.Equal(t, tc.want, got)
 	}
 }
+
+func TestParsePart2Instructions(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		getInput func(t *testing.T) io.ReadCloser
+		want     int
+	}{
+		{
+			desc: "part2 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(`xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))`))
+			},
+			want: 48,
+		},
+		{
+			desc: "part2 - actual input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				f, err := os.Open("./input.txt")
+				require.NoError(t, err)
+				return f
+			},
+			want: 88802350,
+		},
+	}
+
+	for _, tc := range testCases {
+		input := tc.getInput(t)
+		defer input.Close()
+
+		got, err := day03.RunInstructionsPart2(input)
+		require.NoError(t, err)
+		require.Equal(t, tc.want, got)
+	}
+}
