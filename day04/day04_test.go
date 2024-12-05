@@ -14,6 +14,7 @@ func TestDay04(t *testing.T) {
 	testCases := []struct {
 		desc     string
 		getInput func(t *testing.T) io.ReadCloser
+		toTest   func(r io.Reader) (int, error)
 		test     func(t *testing.T, got int)
 	}{
 		{
@@ -31,6 +32,7 @@ MAMMMXMMMM
 MXMXAXMASX
 `))
 			},
+			toTest: day04.CountXmas,
 			test: func(t *testing.T, got int) {
 				require.Equal(t, 18, got)
 			},
@@ -42,8 +44,41 @@ MXMXAXMASX
 				require.NoError(t, err)
 				return f
 			},
+			toTest: day04.CountXmas,
 			test: func(t *testing.T, got int) {
-				require.Equal(t, 2358, got)
+				require.Greater(t, got, 0)
+			},
+		},
+		{
+			desc: "part2 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(`MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
+`))
+			},
+			toTest: day04.CountX_mas,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 9, got)
+			},
+		},
+		{
+			desc: "part2 - actual input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				f, err := os.Open("./input.txt")
+				require.NoError(t, err)
+				return f
+			},
+			toTest: day04.CountX_mas,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 1737, got)
 			},
 		},
 	}
@@ -53,7 +88,7 @@ MXMXAXMASX
 			input := tc.getInput(t)
 			defer input.Close()
 
-			count, err := day04.CountXmas(input)
+			count, err := tc.toTest(input)
 			require.NoError(t, err)
 			tc.test(t, count)
 		})

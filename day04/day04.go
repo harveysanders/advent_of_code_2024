@@ -3,12 +3,15 @@ package day04
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 )
 
 const (
-	xmas = "XMAS"
-	samx = "SAMX"
+	xmas  = "XMAS"
+	samx  = "SAMX"
+	x_mas = "MAS"
+	x_sam = "SAM"
 )
 
 func CountXmas(r io.Reader) (int, error) {
@@ -25,6 +28,78 @@ func CountXmas(r io.Reader) (int, error) {
 	count += CountForwardDiag(rows)
 	count += CountBackwardDiag(rows)
 
+	return count, nil
+}
+
+func CountX_mas(r io.Reader) (int, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return 0, fmt.Errorf("readAll: %w", err)
+	}
+
+	var count int
+	rows := strings.Split(string(data), "\n")
+	rows = rows[:len(rows)-1] // Remove empty newline
+
+	// Find a diagonal (↗) "MAS"
+	bottomRightX := len(rows[0]) - 1
+	bottomRightY := len(rows) - 1
+
+	masRe := regexp.MustCompile(x_mas)
+	samRe := regexp.MustCompile(x_sam)
+
+out:
+	for i := 0; ; i++ {
+		var diag strings.Builder
+		for x := 0; x < len(rows[0]); x++ {
+			y := i - x
+			if x == bottomRightX && y == bottomRightY {
+				break out
+			}
+			if y < 0 || y >= len(rows) {
+				continue
+			}
+			diag.WriteByte(rows[y][x])
+		}
+		matches := masRe.FindAllStringIndex(diag.String(), -1)
+		matchesSam := samRe.FindAllStringIndex(diag.String(), -1)
+		if matchesSam != nil {
+			matches = append(matches, matchesSam...)
+		}
+		if len(matches) == 0 {
+			continue
+		}
+
+		for _, match := range matches {
+			startOriginX := match[0]
+
+			// Adjust x coordinate when "scan line" goes beyond the grid
+			if i > len(rows)-1 {
+				startOriginX = i - (len(rows) - 1) + match[0]
+			}
+			startOriginY := i - startOriginX
+
+			// fmt.Printf("[%d] -> %q @ {%d, %d}\n",
+			// 	i,
+			// 	string(rows[startOriginY][startOriginX]),
+			// 	startOriginX,
+			// 	startOriginY,
+			// )
+			// fmt.Println("______")
+
+			// Check if other diag ↘ has "MAS"
+			// Grab the 3-char string from using the startOrigin {x,y}
+			diagDown := make([]byte, 0, len(x_mas))
+			for i := 0; i < len(x_mas); i++ {
+				x := startOriginX + i
+				y := startOriginY - (len(x_mas) - 1) + i
+				diagDown = append(diagDown, rows[y][x])
+			}
+			if countStrings(string(diagDown), x_mas, x_sam) > 0 {
+				count += 1
+			}
+		}
+	}
 	return count, nil
 }
 
@@ -57,7 +132,7 @@ func CountVertically(rows []string) int {
 	return count
 }
 
-// CountForwardDiag scans the rows diagonally (/).
+// CountForwardDiag starts from the top and scans the rows diagonally (↗).
 func CountForwardDiag(rows []string) int {
 	bottomRightX := len(rows[0]) - 1
 	bottomRightY := len(rows) - 1
@@ -79,7 +154,7 @@ func CountForwardDiag(rows []string) int {
 	}
 }
 
-// CountBackwardDiag scans the rows diagonally (\).
+// CountBackwardDiag starts from bottom and scans the rows diagonally (↘).
 func CountBackwardDiag(rows []string) int {
 	topRightX := len(rows[0]) - 1
 	topRightY := 0
