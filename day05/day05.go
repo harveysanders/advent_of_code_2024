@@ -83,6 +83,29 @@ func (app *App) ValidateUpdate(update []int) bool {
 	return true
 }
 
+// mustFollow returns true if page a must follow b, in other words, b must be followed by a.
+// A return value of false does not necessarily denote that b must follow a.
+func (app *App) mustFollow(b, a int) bool {
+	mustFollowB, ok := app.rules[b]
+	if !ok {
+		return false
+	}
+	return slices.Contains(mustFollowB, a)
+}
+
+func (app *App) SortUpdate(update []int) {
+	slices.SortFunc(update, func(a int, b int) int {
+		// if b must follow a
+		if app.mustFollow(b, a) {
+			return -1
+		}
+		if app.mustFollow(a, b) {
+			return 1
+		}
+		return 0
+	})
+}
+
 func SumMiddlePages(updates [][]int) int {
 	var sum int
 	for _, update := range updates {
@@ -105,5 +128,25 @@ func Part1(r io.Reader) (int, error) {
 	}
 
 	sum := SumMiddlePages(valid)
+	return sum, nil
+}
+
+func Part2(r io.Reader) (int, error) {
+	app := &App{}
+	_, err := app.ReadFrom(r)
+	if err != nil {
+		return 0, fmt.Errorf("readFrom: %w", err)
+	}
+
+	invalid := make([][]int, 0, len(app.updates))
+	for _, update := range app.updates {
+		if !app.ValidateUpdate(update) {
+			sorted := slices.Clone(update)
+			app.SortUpdate(sorted)
+			invalid = append(invalid, sorted)
+		}
+	}
+
+	sum := SumMiddlePages(invalid)
 	return sum, nil
 }

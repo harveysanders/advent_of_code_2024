@@ -10,17 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDay05(t *testing.T) {
-	testCases := []struct {
-		desc     string
-		getInput func(t *testing.T) io.ReadCloser
-		toTest   func(r io.Reader) (int, error)
-		test     func(t *testing.T, got int)
-	}{
-		{
-			desc: "part1 - example input",
-			getInput: func(t *testing.T) io.ReadCloser {
-				return io.NopCloser(strings.NewReader(`47|53
+const exampleInput = `47|53
 97|13
 97|61
 97|47
@@ -47,7 +37,19 @@ func TestDay05(t *testing.T) {
 75,29,13
 75,97,47,61,53
 61,13,29
-97,13,75,29,47`))
+97,13,75,29,47`
+
+func TestDay05(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		getInput func(t *testing.T) io.ReadCloser
+		toTest   func(r io.Reader) (int, error)
+		test     func(t *testing.T, got int)
+	}{
+		{
+			desc: "part1 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(exampleInput))
 			},
 			toTest: day05.Part1,
 			test: func(t *testing.T, got int) {
@@ -66,6 +68,28 @@ func TestDay05(t *testing.T) {
 				require.Equal(t, 5964, got)
 			},
 		},
+		{
+			desc: "part2 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(exampleInput))
+			},
+			toTest: day05.Part2,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 123, got)
+			},
+		},
+		{
+			desc: "part2 - actual input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				f, err := os.Open("./input.txt")
+				require.NoError(t, err)
+				return f
+			},
+			toTest: day05.Part2,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 4719, got)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -82,34 +106,7 @@ func TestDay05(t *testing.T) {
 }
 
 func TestValidateUpdate(t *testing.T) {
-	r := strings.NewReader(`47|53
-97|13
-97|61
-97|47
-75|29
-61|13
-75|53
-29|13
-97|29
-53|29
-61|53
-97|53
-61|29
-47|13
-75|47
-97|75
-47|61
-75|61
-47|29
-75|13
-53|13
-
-75,47,61,53,29
-97,61,53,29,13
-75,29,13
-75,97,47,61,53
-61,13,29
-97,13,75,29,47`)
+	r := strings.NewReader(exampleInput)
 
 	app := &day05.App{}
 	_, err := app.ReadFrom(r)
@@ -155,5 +152,46 @@ func TestValidateUpdate(t *testing.T) {
 			got := app.ValidateUpdate(tc.update)
 			require.Equal(t, tc.want, got)
 		})
+	}
+}
+
+func TestSortUpdate(t *testing.T) {
+	r := strings.NewReader(exampleInput)
+
+	app := &day05.App{}
+	_, err := app.ReadFrom(r)
+	require.NoError(t, err)
+	testCases := []struct {
+		desc   string
+		update []int
+		want   []int
+	}{
+		{
+			desc:   "75,97,47,61,53,",
+			update: []int{75, 97, 47, 61, 53},
+			want:   []int{97, 75, 47, 61, 53},
+		},
+		{
+			desc:   "61,13,29,",
+			update: []int{61, 13, 29},
+			want:   []int{61, 29, 13},
+		},
+		{
+			desc:   "97,13,75,29,47,",
+			update: []int{97, 13, 75, 29, 47},
+			want:   []int{97, 75, 47, 29, 13},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			app := &day05.App{}
+			_, err := app.ReadFrom(strings.NewReader(exampleInput))
+			require.NoError(t, err)
+
+			app.SortUpdate(tc.update)
+			require.Equal(t, tc.want, tc.update)
+		})
+
 	}
 }
