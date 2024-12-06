@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func ParseReports(r io.Reader) ([][]int, error) {
@@ -41,7 +42,7 @@ func CalcSafeReports(r io.Reader, useDampener bool) (int, error) {
 	}
 	var safeCount int
 	for _, report := range reports {
-		if IsSafeReport(report, useDampener, false) {
+		if IsSafeReport(report, useDampener) {
 			safeCount += 1
 		}
 	}
@@ -56,27 +57,18 @@ const (
 	dirDesc
 )
 
-func IsSafeReport(report []int, useDampener bool, dampenerUsed bool) bool {
+func isSafeReport(report []int) bool {
 	if len(report) < 2 {
 		return false
 	}
-
 	var dir direction
 	lastVal := report[0]
-	for i, v := range report[1:] {
+	for _, v := range report[1:] {
 		diff := lastVal - v
 		lastVal = v
 		if diff == 0 || math.Abs(float64(diff)) > 3 {
-			if !useDampener {
-				return false
-			}
-			if dampenerUsed {
-				return false
-			}
-			// dampener enabled and not yet used
-			return IsSafeReport(slices.Delete(report, i, i+1), true, true)
+			return false
 		}
-
 		newDir := dirAsc
 		// If diff is positive, the direction is descending
 		if diff > 0 {
@@ -91,12 +83,31 @@ func IsSafeReport(report []int, useDampener bool, dampenerUsed bool) bool {
 			// Ensure the new direction is the
 			// same as before. If not, bail.
 			if dir != newDir {
-				if !useDampener || dampenerUsed {
-					return false
-				}
-				return IsSafeReport(slices.Delete(report, i, i+1), true, true)
+				return false
 			}
 		}
 	}
 	return true
+}
+
+func IsSafeReport(report []int, dampener bool) bool {
+	if !dampener {
+		return isSafeReport(report)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(report))
+	vals := make([]bool, len(report))
+
+	// TODO: Fix lazy brute force report checking
+	for i := range report {
+		dampened := slices.Delete(slices.Clone(report), i, i+1)
+		go func(s []int) {
+			vals[i] = isSafeReport(s)
+			wg.Done()
+		}(dampened)
+	}
+
+	wg.Wait()
+	return slices.Contains(vals, true)
 }

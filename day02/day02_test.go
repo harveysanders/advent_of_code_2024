@@ -66,7 +66,7 @@ func TestDay02(t *testing.T) {
 			},
 			useDampener: true,
 			test: func(t *testing.T, got int) {
-				require.Greater(t, got, 271)
+				require.Equal(t, 293, got)
 			},
 		},
 	}
@@ -155,11 +155,35 @@ func TestIsSafeReport(t *testing.T) {
 			dampenerEnabled: true,
 			want:            true,
 		},
+		{
+			desc:            "with dampener - 51 54 57 60 61 64 67 64",
+			report:          []int{51, 54, 57, 60, 61, 64, 67, 64},
+			dampenerEnabled: true,
+			want:            true,
+		},
+		{
+			desc:            "with dampener - 54 56 57 58 60 60",
+			report:          []int{54, 56, 57, 58, 60, 60},
+			dampenerEnabled: true,
+			want:            true,
+		},
+		{
+			desc:            "with dampener - 62 60 63 65 66 68 71 77",
+			report:          []int{62, 60, 63, 65, 66, 68, 71, 77},
+			dampenerEnabled: true,
+			want:            false,
+		},
+		{
+			desc:            "with dampener - edge case 1",
+			report:          []int{1, 0, 1, 2, 3, 4, 5},
+			dampenerEnabled: true,
+			want:            true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			got := day02.IsSafeReport(tc.report, tc.dampenerEnabled, false)
+			got := day02.IsSafeReport(tc.report, tc.dampenerEnabled)
 			require.Equal(t, tc.want, got)
 		})
 	}
