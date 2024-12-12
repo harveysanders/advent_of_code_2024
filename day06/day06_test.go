@@ -48,6 +48,38 @@ func TestDay06(t *testing.T) {
 				require.Equal(t, 4982, got)
 			},
 		},
+		{
+			desc: "part2 - example input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				return io.NopCloser(strings.NewReader(`....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...`))
+			},
+			toTest: day06.Part2,
+			test: func(t *testing.T, got int) {
+				require.Equal(t, 6, got)
+			},
+		},
+		{
+			desc: "part2 - actual input",
+			getInput: func(t *testing.T) io.ReadCloser {
+				f, err := os.Open("./input.txt")
+				require.NoError(t, err)
+				return f
+			},
+			toTest: day06.Part2,
+			test: func(t *testing.T, got int) {
+				require.Less(t, got, 1667)
+				require.Greater(t, got, 1665)
+			},
+		},
 	}
 
 	for _, tc := range testCases {
